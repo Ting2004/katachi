@@ -9,8 +9,8 @@ from state import State, attributes
 # 数据定义
 # ------------------------
 
-STATE_FILE = 'state.json'
-TASK_FILE = 'default_tasks.json'
+STATE_FILE = './state.json'
+TASK_FILE = './default_tasks.json'
 default_metrics = {
     'health': 60,
     'hydration': 60,

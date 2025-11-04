@@ -86,7 +86,7 @@ class TaskList:
     def load_tasks(self):
         import json
         try:
-            with open('tasks.json', 'r', encoding='utf-8') as f:
+            with open(self.filename, 'r', encoding='utf-8') as f:
                 tasks_data = json.load(f)
                 for task_name, task_info in tasks_data.items():
                     task_obj = Task(task_info['name'], task_info['effect'], task_info['type'], task_info['label'])
