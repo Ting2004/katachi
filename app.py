@@ -2,48 +2,82 @@
 from nicegui import ui
 import json
 from datetime import date
-from task import TaskList, Task
-from state import State, attributes
+from objects.task import TaskList, Task
+from objects.state import State, attributes
+from utils import load_profile
 
 # ------------------------
 # 数据定义
 # ------------------------
 
-STATE_FILE = './state.json'
-TASK_FILE = './default_tasks.json'
-default_metrics = {
-    'health': 60,
-    'hydration': 60,
-    'sleep': 60,
-    'energy': 60,
-    'relax': 60,
-    'focus': 60,
-    'mood': 60,
-    'social': 60}
-decay_rates = {
-        'health': -2,
-        'hydration': -10,
-        'energy': -5,
-        'focus': -5,
-        'sleep': -5,
-        'relax': 2,
-        }   
 
-state = State(filename=STATE_FILE, init_metrics=default_metrics, decay_rates=decay_rates)
+PROFILE_FILE = './profile.json'
+STATE_FILE = './state.json'
+TASK_FILE = './tasks.json'
+
+profile = load_profile(PROFILE_FILE)
+state = State(filename=STATE_FILE, init=False)
 task_list = TaskList(TASK_FILE)
+
+
 
 # ------------------------
 # UI 界面布局
 # ------------------------
 
-ui.colors(primary="#63C795", secondary="#ffffff", accent="#D9FDAA")
+# @TODO 页面整体风格更改
+color_schemes = {
+    'vibrant': {
+        'primary': '#5E2Bff',
+        'secondary': '#C04CFD',
+        'bg': '#F3FAE1',
+        'error': '#FC6DAB',
+        'accent': '#F7F6C5',
+    },
+    'plain': {
+        'primary': '#003559',
+        'secondary': '#006DAA',
+        'bg': '#B9D6F2',
+        'error': '#061A40',
+        'accent': '#0353A4',
+    },
+    'ppmc': {
+        'primary': '#4e6ef2',
+        'secondary': '#f28fb1',
+        'bg': '#a1d99b',
+        'error': '#ff4c4c',
+        'accent': '#ffca3a',
+    },
+    'greyscale': {
+        'primary': '#555555',
+        'secondary': '#888888',
+        'bg': '#DDDDDD',
+        'error': '#AA0000',
+        'accent': '#777777',
+    },
+    'warm':{
+        'primary': '#EF798A',
+        'secondary': '#F7A9A8',
+        'bg': '#E5C3D1',
+        'error': '#613F75',
+        'accent': '#7D82B8',
+    }
+}
+
+# color_choice = "greyscale"  # 'vibrant', 'plain', 'ppmc', 'greyscale'
 
 
+with ui.row().classes('w-full justify-between mt-4'):
+    ui.label('▲ 僕たちの形').classes('text-2xl font-bold text-center mt-4 mb-4')
 
-ui.label('▲ 僕たちの形').classes('text-2xl font-bold text-center mt-4 mb-4')
+    # 配色选择器
+    color_choice = ui.select(list(color_schemes.keys()),
+            label='配色方案', value='plain',
+            on_change=lambda e : ui.colors(**color_schemes[e.value])).props('dense').classes('text-center w-30 flex-none')
+ui.colors(**color_schemes[color_choice.value])
 
 with ui.row().classes('w-full justify-center gap-8'):
-
+    
     # -------- 左侧：状态面板 --------
     with ui.column().classes('w-1/3 bg-white/60 p-4 rounded-2xl shadow-md'):
         ui.label('💫 当前状态').classes('text-xl font-semibold mb-2 text-center')
@@ -108,14 +142,7 @@ with ui.row().classes('w-full justify-center gap-8'):
         with ui.tab_panels(tabs, value=tab_daily).classes('w-full') as panels:
             
             def make_refresh_fn(target_panel, label):
-                def remove_task(task_name: str):
-                    task_list.apply_task(task_name, current_state=state, multiplier=-task_list.get_task(task_name).get('count', 0))
-                    task_list.delete_task(task_name)
-                    task_list.save_tasks()
-                    update_status_bar()
-                    ui.notify(f"任务 '{task_name}' 已删除")
-                    refresh()  # 重新刷新列表
-
+                
                 def refresh():
                     target_panel.clear()
                     with target_panel:
@@ -132,7 +159,7 @@ with ui.row().classes('w-full justify-center gap-8'):
                                         value=task_entry.get('completed', False),
                                         on_change=lambda e, n=name: toggle_checkbox(e, n)
                                     )
-                                    ui.button('×', color='error',
+                                    ui.button('×', color='secondary',
                                             on_click=lambda _, n=name: remove_task(n)).props('rounded justify-end')
 
                             elif task.get_type() == 'counter':
@@ -141,7 +168,7 @@ with ui.row().classes('w-full justify-center gap-8'):
                                     with ui.row().classes('justify-end'):
                                         ui.button('+', on_click=lambda _, n=name, l=label_widget: inc_counter(n, l))
                                         ui.button('−', on_click=lambda _, n=name, l=label_widget: dec_counter(n, l))
-                                        ui.button('×', color='error',
+                                        ui.button('×', color='secondary',
                                                 on_click=lambda _, n=name: remove_task(n)).props('rounded justify-end')
                 return refresh
             
@@ -183,6 +210,16 @@ with ui.row().classes('w-full justify-center gap-8'):
                 refresh_custom()
 
 
+        def remove_task(task_name: str):
+            task_list.apply_task(task_name, current_state=state, multiplier=-task_list.get_task(task_name).get('count', 0))
+            task_list.delete_task(task_name)
+
+            task_list.save_tasks()
+            task_list.load_tasks()
+
+            update_status_bar()
+            ui.notify(f"任务 '{task_name}' 已删除")
+            refresh_all()  # 重新刷新列表
 
             # 添加任务输入区
         
@@ -228,11 +265,15 @@ with ui.row().classes('w-full justify-center gap-8'):
                     val = 0
                 effect[attr] = val
             # 创建任务
-            task_list.create_task({'name': name, 'type': ttype, 'effect': effect, 'label': label})
-            task_list.save_tasks()
-                                                            
-            # ✅ 先 notify，再刷新
-            ui.notify(f"任务 '{name}' 已添加 ✅")
+            if task_list.create_task({'name': name, 'type': ttype, 'effect': effect, 'label': label}):
+
+                task_list.save_tasks()
+                task_list.load_tasks()
+                                                                
+                # ✅ 先 notify，再刷新
+                ui.notify(f"任务 '{name}' 已添加 ✅")
+            else:
+                ui.notify(f"任务 '{name}' 已存在 ⭕")
 
             panel_map = {
                 'daily': daily_panel,
@@ -257,29 +298,61 @@ with ui.row().classes('w-full justify-center gap-8'):
 
         refresh_all()  # 初始加载任务列表
 
-# -------- 页面底部：保存按钮 --------
+
+
 ui.separator().classes('my-4')
+
+
+def reset_task_and_state():
+    for task_entry in task_list.list_all():
+        task = task_entry['task']
+        if task.get_type() == 'check' and task_entry.get('completed', False):
+            task_list.apply_task(task.get_name(), current_state=state, multiplier=-1)
+        elif task.get_type() == 'counter' and task_entry.get('count', 0) > 0:
+            task_list.apply_task(task.get_name(), current_state=state, multiplier=-task_entry.get('count', 0))
+    task_list.reset_completion_status(manual_reset=True)
+
+# -------- 页面底部：保存按钮 --------
 with ui.row().classes('w-full justify-center py-4 bg-white/70'):
     def save_and_notify():
         state.save_state()
         task_list.save_tasks()
         ui.notify('数据已保存 💾')
 
-    ui.button('保存数据', color='primary', on_click=save_and_notify)
+    ui.button('保存数据', color='primary', on_click=save_and_notify).props('rounded')
+
+    ui.button('手动重置日常任务', color='primary', on_click=lambda: [reset_task_and_state(), refresh_all(), update_status_bar(), ui.notify('日常任务已重置 🔄')]).props('rounded')
+    
+    ui.button('重置状态与任务', color='secondary', on_click=lambda: [reset_to_default(state, task_list), refresh_all(), update_status_bar(), ui.notify('状态与任务已重置 ⚠️')]).props('rounded')
+
+
 
 
 # ------------------------
 # 更新指标显示函数
 # ------------------------
 
-# @TODO 存档读档
-# @TODO 刷新按钮
-
-
-def auto_decay_refresh():
-    state.apply_decay()
-    update_status_bar()
+# 存档读档
+def save_all():
     state.save_state()
+    task_list.save_tasks()
+def load_all():
+    state.load_state()
+    task_list.load_tasks()
+
+# 重置到default配置
+def reset_to_default(state, task_list):
+    profile = load_profile('./default/default_profile.json')
+    tasks = load_profile('./default/default_tasks.json')
+
+    metrics = profile['metrics']
+    decay_rates = profile['decay_rates']
+    state.set_metrics(metrics)
+    state.set_decay_rates(decay_rates)
+
+    task_list.reset_entries(tasks)
+    
+
 
 
 def update_status_bar():
@@ -287,15 +360,18 @@ def update_status_bar():
         value = state.get_metric(k)  # 0~100
         bar.set_value(value / 100)
 
-ui.timer(10, auto_decay_refresh)
-import asyncio
+def auto_decay_refresh():
+    state.apply_decay()
+    update_status_bar()
+    state.save_state()
 
-async def periodic_task_reset():
-    while True:
-        task_list.check_daily_reset()
-        await asyncio.sleep(600)  # 每10分钟检查一次
+def auto_save():
+    state.save_state()
+    task_list.save_tasks()
 
-ui.timer(1.0, lambda: asyncio.create_task(periodic_task_reset()), once=True)
+ui.timer(10, auto_decay_refresh)  # every 10 second
+ui.timer(600, auto_save)  # every 10 miutes
+ui.timer(60, task_list.reset_completion_status)
 
 
 # ------------------------

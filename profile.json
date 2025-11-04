@@ -1,0 +1,20 @@
+{
+    "metrics": {
+        "health": 60,
+        "hydration": 60,
+        "sleep": 60,
+        "energy": 60,
+        "relax": 60,
+        "focus": 60,
+        "mood": 60,
+        "social": 60
+    },
+    "decay_rates":{
+        "health": -2,
+        "hydration": -5,
+        "energy": -5,
+        "focus": -5,
+        "sleep": -5,
+        "relax": 2
+    }   
+}

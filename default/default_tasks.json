@@ -47,7 +47,7 @@
     },
     "type": "check",
     "label": "daily",
-    "completed": true,
+    "completed": false,
     "count": 1
   },
   "洗澡": {
@@ -201,23 +201,6 @@
     "type": "counter",
     "label": "work",
     "completed": false,
-    "count": 0
-  },
-  "学习外语": {
-    "name": "学习外语",
-    "effect": {
-      "health": 0,
-      "hydration": 0,
-      "sleep": 0,
-      "energy": -5,
-      "relax": 0,
-      "focus": 10,
-      "mood": 5,
-      "social": 0
-    },
-    "type": "check",
-    "label": "work",
-    "completed": true,
     "count": 0
   }
 }
