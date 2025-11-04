@@ -14,7 +14,7 @@
     "type": "counter",
     "label": "daily",
     "completed": false,
-    "count": 0
+    "count": 1
   },
   "喝一杯水": {
     "name": "喝一杯水",
@@ -31,7 +31,7 @@
     "type": "counter",
     "label": "daily",
     "completed": false,
-    "count": 0
+    "count": 3
   },
   "运动": {
     "name": "运动",
@@ -47,8 +47,8 @@
     },
     "type": "check",
     "label": "daily",
-    "completed": true,
-    "count": 1
+    "completed": false,
+    "count": 0
   },
   "洗澡": {
     "name": "洗澡",
@@ -64,8 +64,8 @@
     },
     "type": "check",
     "label": "daily",
-    "completed": false,
-    "count": 1
+    "completed": true,
+    "count": 0
   },
   "睡满八小时": {
     "name": "睡满八小时",
@@ -81,8 +81,8 @@
     },
     "type": "check",
     "label": "daily",
-    "completed": false,
-    "count": 1
+    "completed": true,
+    "count": 0
   },
   "工作任务一小时": {
     "name": "工作任务一小时",
@@ -99,7 +99,7 @@
     "type": "counter",
     "label": "work",
     "completed": false,
-    "count": 2
+    "count": 7
   },
   "整理桌面": {
     "name": "整理桌面",
@@ -116,7 +116,7 @@
     "type": "check",
     "label": "daily",
     "completed": false,
-    "count": 1
+    "count": 0
   },
   "与朋友聊天": {
     "name": "与朋友聊天",
@@ -133,7 +133,7 @@
     "type": "check",
     "label": "social",
     "completed": false,
-    "count": 1
+    "count": 0
   },
   "外出活动": {
     "name": "外出活动",
@@ -150,7 +150,7 @@
     "type": "check",
     "label": "social",
     "completed": false,
-    "count": 1
+    "count": 0
   },
   "发呆放空": {
     "name": "发呆放空",
@@ -167,7 +167,7 @@
     "type": "check",
     "label": "custom",
     "completed": false,
-    "count": 1
+    "count": 0
   },
   "写日记": {
     "name": "写日记",
@@ -184,7 +184,7 @@
     "type": "check",
     "label": "custom",
     "completed": false,
-    "count": 1
+    "count": 0
   },
   "学习一小时": {
     "name": "学习一小时",
@@ -201,23 +201,6 @@
     "type": "counter",
     "label": "work",
     "completed": false,
-    "count": 0
-  },
-  "学习外语": {
-    "name": "学习外语",
-    "effect": {
-      "health": 0,
-      "hydration": 0,
-      "sleep": 0,
-      "energy": -5,
-      "relax": 0,
-      "focus": 10,
-      "mood": 5,
-      "social": 0
-    },
-    "type": "check",
-    "label": "work",
-    "completed": true,
     "count": 0
   }
 }

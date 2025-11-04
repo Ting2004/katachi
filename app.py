@@ -25,7 +25,7 @@ task_list = TaskList(TASK_FILE)
 # UI 界面布局
 # ------------------------
 
-# @TODO 页面整体风格更改
+# 页面整体风格更改
 color_schemes = {
     'vibrant': {
         'primary': '#5E2Bff',
@@ -63,9 +63,6 @@ color_schemes = {
         'accent': '#7D82B8',
     }
 }
-
-# color_choice = "greyscale"  # 'vibrant', 'plain', 'ppmc', 'greyscale'
-
 
 with ui.row().classes('w-full justify-between mt-4'):
     ui.label('▲ 僕たちの形').classes('text-2xl font-bold text-center mt-4 mb-4')
@@ -224,21 +221,65 @@ with ui.row().classes('w-full justify-center gap-8'):
             # 添加任务输入区
         
         
-        # ========== 新增任务面板 ==========
-        ui.separator()
-        with ui.row().classes('justify-between items-end mt-4'):
-            new_task_name = ui.input(
-                label='新任务',
-                placeholder='今天需要完成什么任务？'
-            ).props('clearable outlined dense').classes('grow w-[230px] flex-none')
+        refresh_all()  # 初始加载任务列表
 
-            new_task_type = ui.select({'check': '单次任务', 'counter': '多次任务'},
-                label='任务类型',
-            ).props('outlined dense').classes('w-[150px] flex-none')
 
-            new_task_label = ui.select({'daily': '日常生活', 'work': '工作学习', 'social': '社交娱乐', 'custom': '其他'},
-                label='任务标签',
-            ).props('outlined dense').classes('w-[150px] flex-none')
+    # ========== 新增任务面板 ==========
+    def add_user_task(e=None):
+        name = new_task_name.value.strip()
+        ttype = new_task_type.value
+        label = new_task_label.value
+        if not name or not ttype or not label:
+            ui.notify('请输入任务名称与类型 ⚠️')
+            return
+        effect = {}
+        for attr, inp in effect_inputs.items():
+            try:
+                val = int(inp.value)
+            except ValueError:
+                val = 0
+            effect[attr] = val
+        # 创建任务
+        if task_list.create_task({'name': name, 'type': ttype, 'effect': effect, 'label': label}):
+
+            task_list.save_tasks()
+            task_list.load_tasks()
+                                                                
+            # ✅ 先 notify，再刷新
+            ui.notify(f"任务 '{name}' 已添加 ✅")
+        else:
+            ui.notify(f"任务 '{name}' 已存在 ⭕")
+
+        panel_map = {
+            'daily': daily_panel,
+            'work': work_panel,
+            'social': social_panel,
+            'custom': custom_panel}                    
+        # refresh_task_list(panel_map[label], label)
+        refresh_all()
+        #@TODO 添加新任务后切换到对应的tab
+        # tabs.set_value(label)  
+        # panels.set_value(label)
+        
+        # 清空输入框
+        new_task_name.value = ''
+        new_task_type.value = None
+        new_task_label.value = None
+        for attr, inp in effect_inputs.items():
+            inp.value = 0
+    with ui.row().classes('justify-between items-end mt-4'):
+        new_task_name = ui.input(
+            label='新任务',
+            placeholder='今天需要完成什么任务？'
+        ).props('clearable outlined dense').classes('grow w-[230px] flex-none')
+
+        new_task_type = ui.select({'check': '单次任务', 'counter': '多次任务'},
+            label='任务类型',
+        ).props('outlined dense').classes('w-[150px] flex-none')
+
+        new_task_label = ui.select({'daily': '日常生活', 'work': '工作学习', 'social': '社交娱乐', 'custom': '其他'},
+            label='任务标签',
+        ).props('outlined dense').classes('w-[150px] flex-none')
 
         effect_inputs = {}  # 保存 input 对象
         with ui.row().classes('items-center mt-2 gap-2'):
@@ -249,59 +290,11 @@ with ui.row().classes('w-full justify-center gap-8'):
                     inp = ui.input(value='0', placeholder='0').props('outlined dense')
                     effect_inputs[attr] = inp  # 保存 input 对象，提交时读取
 
-
-        def add_user_task(e=None):
-            name = new_task_name.value.strip()
-            ttype = new_task_type.value
-            label = new_task_label.value
-            if not name or not ttype or not label:
-                ui.notify('请输入任务名称与类型 ⚠️')
-                return
-            effect = {}
-            for attr, inp in effect_inputs.items():
-                try:
-                    val = int(inp.value)
-                except ValueError:
-                    val = 0
-                effect[attr] = val
-            # 创建任务
-            if task_list.create_task({'name': name, 'type': ttype, 'effect': effect, 'label': label}):
-
-                task_list.save_tasks()
-                task_list.load_tasks()
-                                                                
-                # ✅ 先 notify，再刷新
-                ui.notify(f"任务 '{name}' 已添加 ✅")
-            else:
-                ui.notify(f"任务 '{name}' 已存在 ⭕")
-
-            panel_map = {
-                'daily': daily_panel,
-                'work': work_panel,
-                'social': social_panel,
-                'custom': custom_panel}                    
-            # refresh_task_list(panel_map[label], label)
-            refresh_all()
-            #@TODO 添加新任务后切换到对应的tab
-            # tabs.set_value(label)  
-            # panels.set_value(label)
         
-            # 清空输入框
-            new_task_name.value = ''
-            new_task_type.value = None
-            new_task_label.value = None
-            for attr, inp in effect_inputs.items():
-                inp.value = 0
-            
-
         ui.button('添加', color='primary', on_click=add_user_task).props('rounded')
-
-        refresh_all()  # 初始加载任务列表
-
 
 
 ui.separator().classes('my-4')
-
 
 def reset_task_and_state():
     for task_entry in task_list.list_all():
@@ -312,12 +305,14 @@ def reset_task_and_state():
             task_list.apply_task(task.get_name(), current_state=state, multiplier=-task_entry.get('count', 0))
     task_list.reset_completion_status(manual_reset=True)
 
-# -------- 页面底部：保存按钮 --------
-with ui.row().classes('w-full justify-center py-4 bg-white/70'):
-    def save_and_notify():
+def save_and_notify():
         state.save_state()
         task_list.save_tasks()
         ui.notify('数据已保存 💾')
+
+
+# -------- 页面底部：保存按钮 --------
+with ui.row().classes('w-full justify-center py-4 bg-white/70'):
 
     ui.button('保存数据', color='primary', on_click=save_and_notify).props('rounded')
 
